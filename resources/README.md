@@ -18,5 +18,5 @@ node .\index.js '.\resources\Agreements openapi.yaml' .\build\agreements.html
 You can use the dockerfile to create a quick web server to view the results. 
 
 ```sh
-docker run --rm -v C:\git\Mermade\shinner\build:/usr/share/nginx/html -p 8080:80 nginx
+docker run --rm -v $PWD\build:/usr/share/nginx/html -p 8080:80 nginx
 ```
