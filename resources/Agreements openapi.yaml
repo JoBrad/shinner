@@ -1,0 +1,421 @@
+openapi: 3.0.0
+
+info:
+  title: Agreements
+  version: 1.0.0
+  description: Agreements API for document signing packages
+  contact:
+    email: cwilding@i3verticals.com
+  termsOfService: https://i3verticals.com/terms-of-use/
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+
+servers:
+  - url: https://test-api.i3verticals.com/v1
+    description: Sandbox
+  - url: https://api.i3verticals.com/v1
+    description: Production
+
+security:
+  - BasicAuth: []
+
+tags:
+  - name: Authentication
+    description: |
+      Methods for creating tokens used for interacting with the API.
+  - name: Agreements
+    description: Methods for creating and updating signing packages.
+
+paths:
+  /services/oauth2/token:
+    post:
+      operationId: CreateBearerToken
+      summary: CreateBearerToken
+      description: Generates an OAuth 2.0 bearer token
+      tags:
+        - Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/200-Authenticate'
+        '401':
+          $ref: '#/components/responses/401Error'
+        '404':
+          $ref: '#/components/responses/404Error'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  description: >
+                    The type of access being requested. Only supports
+                    client_credentials.
+                  type: string
+                  enum:
+                    - client_credentials
+              required:
+                - grant_type
+  /agreements:
+    post:
+      operationId: PublishAgreement
+      summary: Publish an agreement
+      description: Publish an agreement with information about signatories
+      tags:
+        - Agreements
+      responses:
+        '200':
+          description: Agreement Successfully published.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishResponse'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+        description: The template request information.
+        required: true
+  /agreements/{id}:
+    get:
+      operationId: GetAgreement
+      summary: Get agreement
+      description: Get a previously created agreement
+      tags:
+        - Agreements
+      parameters:
+        - name: id
+          in: path
+          description: The unique ID of the agreement
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status information.
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PublishResponse'
+    put:
+      operationId: UpdateAgreement
+      summary: Update agreement
+      description: Update a single agreement.
+      tags:
+        - Agreements
+      parameters:
+        - name: id
+          in: path
+          description: The unique ID of the agreement
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: The resource was updated successfully.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishResponse'
+        description: Update action performed on a single agreement.
+        required: true
+
+components:
+  responses:
+    200-Authenticate:
+      description: Authentication was successful.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/AuthResponse'
+    401Error:
+      description: Unauthorized. Try to create a new token.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    403Error:
+      description: Forbidden. You are not authorized to access the requested resource.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    404Error:
+      description: Not Found. The requested resource does not exist.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    405Error:
+      description: >
+        Method Not Allowed. The requested resource exists, but the requested
+        method (e.g., POST) is  not allowed to be performed on that resource.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    429Error:
+      description: >
+        Quota exceeded. You have made too many requests in a short time period.
+        Try again soon.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    50Error:
+      description: >
+        Internal Server Error. We had a problem with our server. Try again
+        later.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    503Error:
+      description: >
+        Service Unavailable. We're temporarily offline for maintenance. Please
+        try again later.
+      content:
+        '*/*':
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  securitySchemes:
+    BasicAuth:
+      description: >
+        This API requires basic authentication over HTTPS. Use the client id and
+        secret provided to you during integration.
+      type: http
+      scheme: basic
+    BearerToken:
+      type: apiKey
+      name: Authorization
+      in: header
+  schemas:
+    AuthResponse:
+      description: Authentication object
+      title: CreateTokenResponse
+      properties:
+        access_token:
+          description: The token that should be used on subsequent calls
+          example: 8C5YuN0LDkGTlo1xwdh6z2ibPJpZ
+          type: string
+        application_name:
+          description: The GUID of the application
+          example: 43a444b1-a9a2-4474-beb0-71e66e4650cb
+          type: string
+        api_product_list:
+          description: A list of API products that the user has access to
+          example: '[Payments]'
+          type: string
+        api_product_list_json:
+          description: A valid JSON list of API products that the user has access to
+          example: '[ "Payments" ]'
+          type: string
+        client_id:
+          description: The unique identifier used to request the token
+          example: ABCDEFG
+          type: string
+        developer.email:
+          description: The email address on file for the user that requested the token
+          example: john.doe@example.com
+          type: string
+        expires_in:
+          description: 'How long the token will remain valid, in seconds after issued_at'
+          example: 599
+          type: number
+        issued_at:
+          description: 'The timestamp when the token was issued, as a UNIX epoch'
+          example: 1536260053678
+          type: number
+        organization_name:
+          description: The organization associated with the user who requested the token
+          example: i3verticals
+          type: string
+        refresh_count:
+          description: How many times this token has been refreshed
+          example: 0
+          type: number
+        refresh_token_expires_in:
+          description: >-
+            If this is a refresh response, how long the refreshed token will
+            remain valid, in seconds
+          example: 0
+          type: number
+        scope:
+          description: The scope granted by this token
+          example: all
+          type: string
+        status:
+          description: The status of the token
+          example: approved
+          type: string
+        token_type:
+          description: The type of token that was issued
+          example: BearerToken
+          type: string
+    ErrorResponse:
+      description: Error reponse. Returns optional array of errors.
+      type: object
+      required:
+        - error_response
+      properties:
+        error_response:
+          $ref: '#/components/schemas/Error'
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code.
+        message:
+          type: string
+          description: Error message.
+        errors:
+          type: array
+          description: Optional array of error messages.
+          items:
+            type: string
+    AgreementStatus:
+      description: Current status of the agreement.
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          enum:
+            - published
+            - open
+            - submitted
+            - review
+            - approved
+            - declined
+            - canceled
+            - incomplete
+            - pending
+            - activated
+            - rejected
+            - closed
+            - terminated
+            - deleted
+        message:
+          type: string
+          description: Description or reason for the status.
+          example: Signing package was created and published.
+        last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+    PublishResponse:
+      type: object
+      properties:
+        agreement_id:
+          type: string
+          description: Agreement ID
+          readOnly: true
+          example: 8e153a44a2d4f2ee246cd5ec619346a3
+        agreement_status:
+          $ref: '#/components/schemas/AgreementStatus'
+        launch_urls:
+          $ref: '#/components/schemas/LaunchUrls'
+        published_documents:
+          $ref: '#/components/schemas/PublishedDocuments'
+        field_map:
+          $ref: '#/components/schemas/FieldMap'
+    LaunchUrls:
+      description: URL link(s) to the signing package(s)
+      type: object
+      readOnly: true
+      additionalProperties:
+        type: string
+      example:
+        signatory1: 'https://example.com/1'
+        signatory2: 'https://example.com/2'
+    PublishedDocuments:
+      description: List of documents returned in the signing package.
+      type: array
+      readOnly: true
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Name of the document published.
+          id:
+            type: string
+            description: GUID of the document
+      example:
+        - name: doc1
+          id: f50d54bc-88f2-45b7-a829-d8d2d01408c4
+        - name: doc2
+          id: 2cb5d73e-6d59-4134-a529-909d05ba93e6
+    PublishRequest:
+      type: object
+      required:
+        - publisher
+        - draft
+        - field_map
+        - signature_map
+      properties:
+        publisher:
+          type: string
+          description: >
+            The email address of the publisher of this agreement.  If the
+            "publisherId" is specified, it will be used instead.
+          example: publisher@example.com
+        draft:
+          type: boolean
+        field_map:
+          $ref: '#/components/schemas/FieldMap'
+        signature_map:
+          description: >-
+            The key:value map that specifies signatories (by email address) that
+            will be associated with the signing document signature placeholders.
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            primary: owner@example.com
+        email_options:
+          $ref: '#/components/schemas/EmailOptions'
+    FieldMap:
+      type: object
+      description: >-
+        The key:value map that specifies field values that will be inserted into
+        the signing document field placeholders.
+      additionalProperties:
+        type: string
+      example:
+        businessNameLegal: 'ACME Products, Inc.'
+        merchantDbaName: ACME
+        TIN: '123456789'
+    EmailOptions:
+      type: object
+      properties:
+        subject:
+          description: Subject of the email that is sent to recipients.
+          type: string
+          example: Email subject
+        message:
+          description: >-
+            The message that will be inserted into the body of the email that is
+            sent to recipients.
+          type: string
+          example: This is the body of the email message.
+        cc_recipients:
+          description: Other recipients who will also receive the signing documents.
+          type: array
+          items:
+            type: string
+          example:
+            - recipient1@example.com
+            - recipient2@example.com

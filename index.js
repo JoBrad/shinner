@@ -7,6 +7,61 @@ const mdConverter = require('widdershins')
 const yaml = require('js-yaml')
 const shins = require('shins');
 
+const widdershins_options = {
+  "codeSamples": true,
+  "customApiKeyValue": "ApiKey",
+  "discovery": false,
+  "expandBody": false,
+  "headings": 2,
+  "httpsnippet": false,
+  "includes": [],
+  // "jsonEditor": true,
+  // "jsonEditorOptions": {
+  //     "disableProperties": false,
+  //     "disableEditJson": false,
+  //     "removeEmptyProperties": true,
+  //     "noDefaultProperties": false
+  // },
+  "lang": false,
+  "language_tabs": [
+      { "shell" :"cURL" },
+      { 'http': 'HTTP' },
+      { "javascript": "JavaScript" },
+      { "python": "Python" },
+      { "ruby": "Ruby" },
+      { 'java': 'Java' }
+  ],
+  "maxDepth": 10,
+  "omitBody": false,
+  "outfile": "",
+  "raw": false,
+  "resolve": false,
+  "search": true,
+  "shallowSchemas": true,
+  "theme": "sunburst",
+  "tocSummary": false,
+  "user_templates": "",
+  "verbose": true,
+  "yaml": false
+}
+
+const shins_options = {
+  // if true, missing files will trigger an exit(1)
+  cli: false,
+  minify: false,
+  customCss: false,
+  inline: false,
+  // setting to true turns off markdown sanitisation
+  unsafe: false,
+  // if true, do not automatically convert links in text to anchor tags
+  'no-links': false
+  // used to resolve relative paths for included files
+  //source = filename,
+  // logo: './resources/logo.png',
+  // Link to apply to the logo
+  // 'logo-url': 'https://www.example.com'
+}
+
 program
   .arguments('<surceswaggerfile> <targethtmlpath>')
   .option('-d, --debug <debuglevel>', 'The debug level')
@@ -14,7 +69,7 @@ program
   .action(function(source, target, include, debug) {
     sourceFile = path.resolve(source)
     targetPath = path.resolve(target)
-    includeFile = '/Users/javier/shinner/examples/api_2.yaml'
+    // includeFile = './examples/api_2.yaml'
   })
   .parse(process.argv)
 
@@ -35,21 +90,20 @@ function readSourceFile(file) {
   }
 }
 
-function convertToMarkDown(input) {
+function convertToMarkDown(input, widdershins_options, shins_options) {
   console.log('[INFO] Converting : %s', input.sourceFile)
-  var options = {}
-  options.codeSamples = true
-  options.sample = true
-  console.error('[INFO] includeFile: %s', includeFile[0])
-  if (includeFile) options.includes = includeFile[0]
-  mdConverter.convert(input.sourceContent,options,function(err,output){
+  // options.codeSamples = true
+  // options.sample = true
+  // console.error('[INFO] includeFile: %s', includeFile[0])
+  // if (includeFile) options.includes = includeFile[0]
+  mdConverter.convert(input.sourceContent,widdershins_options,function(err,output){
     if (err) {
       console.error('[WARNING] Error convertToMarkDown: %s', err)
       input.markdown = ''
     }
     console.log('[INFO] Converted to MD: %s', input.sourceFile)
     input.markdown = output
-    convertToHtml(input)
+    convertToHtml(input, shins_options)
   })
   return input
 
@@ -67,11 +121,7 @@ function writeTargetFile(input) {
   }
 }
 
-function convertToHtml(input) {
-  var options = {}
-  options.minify = false;
-  options.customCss = false;
-  options.inline = false;
+function convertToHtml(input, options) {
   console.log('[INFO] convertToHtml : %s', input.sourceFile)
   shins.render(input.markdown, options, (err, html) => {
     if (err) {
@@ -83,7 +133,7 @@ function convertToHtml(input) {
   });
 }
 
-convertToMarkDown( readSourceFile(sourceFile) )
+convertToMarkDown( readSourceFile(sourceFile), widdershins_options, shins_options )
 
 // recursive(sourceFile, [(f,s) => !s.isDirectory() && path.extname(f) != ".yaml"])
 //   .then(

@@ -1,0 +1,36 @@
+{
+    "codeSamples": true,
+    "customApiKeyValue": "ApiKey",
+    "discovery": false,
+    "expandBody": false,
+    "headings": 2,
+    "httpsnippet": false,
+    "includes": [],
+    "jsonEditor": true,
+    "jsonEditorOptions": {
+        "disableProperties": false,
+        "disableEditJson": false,
+        "removeEmptyProperties": true,
+        "noDefaultProperties": false
+    },
+    "lang": false,
+    "language_tabs": [
+        { "curl" :"cURL" },
+        { "javascript": "JavaScript" },
+        { "python": "Python" },
+        { "ruby": "Ruby" },
+        { "go": "Go" }
+    ],
+    "maxDepth": 10,
+    "omitBody": false,
+    "outfile": "",
+    "raw": false,
+    "resolve": false,
+    "search": true,
+    "shallowSchemas": false,
+    "theme": "hybrid",
+    "tocSummary": false,
+    "user_templates": "",
+    "verbose": true,
+    "yaml": false
+}

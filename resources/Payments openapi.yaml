@@ -1,0 +1,1572 @@
+openapi: 3.0.0
+
+info:
+  title: Payments
+  description: >
+    The Payments API provides methods for charging customers, refunding money to
+    customers, and tokenizing payment methods to be used for charges or refunds.
+  termsOfService: https://i3verticals.com/terms-of-use/
+  contact:
+    name: i3 Vertical's implementation team
+    url: https://docs.i3verticals.com/support
+    email: i3integrationleads@i3verticals.com
+  version: 1.0.0
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+
+servers:
+  - url: https://test-api.i3verticals.com/v1
+    description: Sandbox
+  - url: https://api.i3verticals.com/v1
+    description: Production
+
+security:
+  - BearerToken: []
+  - BasicAuth: []
+
+tags:
+  - name: Authentication
+    description: Methods for authenticating with the API.
+  - name: Charges
+    description: Methods for creating and updating charges.
+  - name: Refunds
+    description: Methods for creating and updating refunds.
+  - name: Tokens
+    description: Methods for tokenizing secure data.
+
+paths:
+  /services/oauth2/token:
+    post:
+      operationId: CreateBearerToken
+      summary: CreateBearerToken
+      description: Generates an OAuth 2.0 bearer token
+      tags:
+        - Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        200:
+          $ref: '#/components/responses/200-Authenticate'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        405:
+          $ref: '#/components/responses/405Error'
+        501:
+          $ref: '#/components/responses/501Error'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  description: >
+                    The type of access being requested. Only supports
+                    client_credentials.
+                  type: string
+                  enum:
+                    - client_credentials
+              required:
+                - grant_type
+  /charges:
+    post:
+      operationId: CreateCharge
+      summary: CreateCharge
+      description: Charge a customer money.
+      tags:
+        - Charges
+      security:
+        - BearerToken: []
+      responses:
+        201:
+          $ref: '#/components/responses/201-CreateCharge'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: >-
+                Detail of a charge to be processed. Check out the other charge
+                models to see variations of this call.
+              title: ChargeDemo
+              properties:
+                name_on_card:
+                  description: The name of the customer as it appears on the payment type
+                  example: John Doe
+                  type: string
+                card_number:
+                  description: >
+                    The credit card number. Required for charges using a card
+                    that is not stored.
+                  example: 4111111111111111
+                  maxLength: 19
+                  minLength: 13
+                  type: string
+                expiration_date:
+                  description: >
+                    The expiration date of the card, in MMYY format. Required
+                    for charges using a card that is not stored.
+                  example: 1222
+                  maxLength: 4
+                  minLength: 4
+                  type: string
+                cvv:
+                  description: >
+                    The 3 or 4 digit Card Verification Value. This parameter may
+                    be required depending on the merchant's setup.
+                  example: 123
+                  maxLength: 4
+                  minLength: 3
+                  type: string
+                charge_type:
+                  description: How the charge should be processed.
+                  enum:
+                    - Authorization
+                    - Sale
+                  example: Sale
+                  type: string
+                force_duplicate:
+                  example: true
+                  description: >
+                    Whether the transaction will be captured, if it is flagged
+                    as a duplicate.
+                  type: boolean
+                total_amount:
+                  description: The total amount charged.
+                  type: number
+                  example: 5
+  /charges/{id}:
+    get:
+      operationId: GetCharges
+      summary: GetCharges
+      description: Get the charge detail
+      tags:
+        - Charges
+      security:
+        - BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/ChargeId'
+      responses:
+        201:
+          $ref: '#/components/responses/201-GetCharge'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+  /charges/{id}/capture:
+    post:
+      operationId: CaptureCharge
+      summary: CaptureCharge
+      description: Settle an authorized charge
+      tags:
+        - Charges
+      security:
+        - BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/ChargeId'
+      responses:
+        201:
+          $ref: '#/components/responses/201-CaptureCharge'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+  /charges/{id}/void:
+    post:
+      operationId: VoidCharge
+      summary: VoidCharge
+      description: Voids or cancel a charge
+      tags:
+        - Charges
+      security:
+        - BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/ChargeId'
+      responses:
+        201:
+          $ref: '#/components/responses/201-VoidCharge'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+  /refunds:
+    post:
+      operationId: CreateRefund
+      summary: CreateRefund
+      description: Refund a charge
+      tags:
+        - Refunds
+      security:
+        - BearerToken: []
+      responses:
+        201:
+          $ref: '#/components/responses/201-CreateRefund'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: >-
+                Detail of a refund to be processed. Check out the other refund
+                models to see variations of this call.
+              title: RefundDemo
+              properties:
+                card_number:
+                  description: >
+                    The credit card number. Required for charges using a card
+                    that is not stored.
+                  example: 4111111111111111
+                  maxLength: 19
+                  minLength: 13
+                  type: string
+                expiration_date:
+                  description: >
+                    The expiration date of the card, in MMYY format. Required
+                    for charges using a card that is not stored.
+                  example: 1222
+                  maxLength: 4
+                  minLength: 4
+                  type: string
+                force_duplicate:
+                  example: true
+                  description: >
+                    Whether the transaction will be captured, if it is flagged
+                    as a duplicate.
+                  type: boolean
+                total_amount:
+                  description: The total amount charged.
+                  type: number
+                  example: 5
+                original_charge_id:
+                  description: |
+                    The identifier of the charge that this refund reverses.
+                  example: 97678
+                  title: Original Charge Id
+                  type: integer
+                  format: int32
+  /refunds/{id}:
+    get:
+      operationId: GetRefunds
+      summary: GetRefunds
+      description: Get information about a refund
+      tags:
+        - Refunds
+      security:
+        - BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/RefundId'
+      responses:
+        201:
+          $ref: '#/components/responses/201-GetRefund'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+  /refunds/{id}/void:
+    post:
+      operationId: VoidRefund
+      summary: VoidRefund
+      description: Voids or cancel a refund
+      tags:
+        - Refunds
+      security:
+        - BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/RefundId'
+      responses:
+        201:
+          $ref: '#/components/responses/201-VoidRefund'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+  /tokens/cards:
+    post:
+      operationId: CreateCardToken
+      summary: CreateCardToken
+      description: Create a secure token for a credit card
+      tags:
+        - Tokens
+      security:
+        - BearerToken: []
+      parameters:
+        - name: Authorization
+          description: >
+            The bearer token created when the user authenticated into the
+            system.
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          $ref: '#/components/responses/201-CreateToken'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateCardToken'
+  /tokens/cards/{id}:
+    get:
+      operationId: GetCardToken
+      summary: GetCardToken
+      description: Get the stored card information. Only available to some users.
+      tags:
+        - Tokens
+      security:
+        - BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/CardTokenId'
+      responses:
+        200:
+          $ref: '#/components/responses/200-GetCardToken'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+    put:
+      operationId: UpdateCardToken
+      summary: UpdateCardToken
+      description: Updates the stored information for a card token
+      tags:
+        - Tokens
+      security:
+        - BearerToken: []
+      parameters:
+        - name: Authorization
+          description: >
+            The bearer token created when the user authenticated into the
+            system.
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: id
+          description: A unique identifier for a card token.
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          $ref: '#/components/responses/200-UpdateToken'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateCardToken'
+  /tokens/accounts:
+    post:
+      operationId: CreateAccountToken
+      summary: CreateAccountToken
+      description: Create a secure token for an account
+      tags:
+        - Tokens
+      security:
+        - BearerToken: []
+      parameters:
+        - name: Authorization
+          description: >
+            The bearer token created when the user authenticated into the
+            system.
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          $ref: '#/components/responses/201-CreateToken'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateAccountToken'
+  /tokens/accounts/{id}:
+    get:
+      operationId: GetAccountToken
+      summary: GetAccountToken
+      description: Get the stored account information. Only available to some users.
+      tags:
+        - Tokens
+      security:
+        - BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/AccountTokenId'
+      responses:
+        200:
+          $ref: '#/components/responses/200-GetAccountToken'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+    put:
+      operationId: UpdateAccountToken
+      summary: UpdateAccountToken
+      description: Updates the stored information for an account token
+      tags:
+        - Tokens
+      security:
+        - BearerToken: []
+      parameters:
+        - name: Authorization
+          description: >
+            The bearer token created when the user authenticated into the
+            system.
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: id
+          description: A unique identifier for an account token.
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          $ref: '#/components/responses/200-UpdateToken'
+        401:
+          $ref: '#/components/responses/401Error'
+        404:
+          $ref: '#/components/responses/404Error'
+        501:
+          $ref: '#/components/responses/501Error'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateAccountToken'
+
+components:
+  parameters:
+    ChargeId:
+      name: id
+      in: path
+      description: A unique identifier for a charge.
+      required: true
+      schema:
+        type: integer
+        format: int64
+    RefundId:
+      name: id
+      in: path
+      description: A unique identifier for a charge.
+      required: true
+      schema:
+        type: integer
+        format: int64
+    CardTokenId:
+      name: id
+      in: path
+      description: A unique identifier for a card token.
+      required: true
+      schema:
+        type: string
+    AccountTokenId:
+      name: id
+      in: path
+      description: A unique identifier for an account token.
+      required: true
+      schema:
+        type: string
+  responses:
+    200-Authenticate:
+      description: Authentication was successful
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthResponse'
+    201-CreateCharge:
+      description: The charge was successfully created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChargeResponse'
+    201-GetCharge:
+      description: Detail of a charge
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChargeInfo'
+    201-CaptureCharge:
+      description: The charge was successfully captured
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChargeResponse'
+    201-VoidCharge:
+      description: The charge was successfully voided
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChargeResponse'
+    201-CreateRefund:
+      description: The refund was successfully created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RefundResponse'
+    201-GetRefund:
+      description: Detail of a refund
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RefundInfo'
+    201-VoidRefund:
+      description: The refund was successfully voided
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RefundResponse'
+    201-CreateToken:
+      description: The token was successfully created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateCardTokenResponse'
+    200-GetCardToken:
+      description: The token was successfully retrieved
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CardTokenDetail'
+    200-UpdateToken:
+      description: The token was successfully updated.
+    200-GetAccountToken:
+      description: The token was successfully retrieved
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountTokenDetail'
+    401Error:
+      description: >
+        Unauthorized<br/>
+        Try to create a new bearer token
+      content:
+        application/json:
+          schema:
+            description: 401 error response
+            properties:
+              error:
+                description: A human-friendly explanation of the error.
+                example: You are not authorized to access this resource
+                type: string
+              error_description:
+                description: The error code generated by the application.
+                example: >
+                  Try creating a new Bearer token. If that doesn't work,
+                  and you typically have access to this resource, contact
+                  our integration team for help.
+                type: string
+              exception:
+                description: May contain additional detail related to the error.
+                example: Unauthorized
+                type: string
+    404Error:
+      description: >
+        Not Found<br/>
+        The requested resource does not exist
+      content:
+        application/json:
+          schema:
+            description: 404 error response
+            properties:
+              error:
+                description: A human-friendly explanation of the error.
+                example: invalid_resource
+                type: string
+              error_description:
+                description: The error code generated by the application.
+                example: The resource you requested does not exist
+                type: string
+              exception:
+                description: May contain additional detail related to the error.
+                type: string
+    405Error:
+      description: |
+        Method Not Allowed<br/>
+        The method used is not allowed for this resource
+      content:
+        application/json:
+          schema:
+            description: 405 error response
+            properties:
+              error:
+                description: A human-friendly explanation of the error.
+                example: Method not allowed
+                type: string
+              error_description:
+                description: The error code generated by the application.
+                example: The method used is not allowed for this resource
+                type: string
+              exception:
+                description: May contain additional detail related to the error.
+                example: Method not allowed
+                type: string
+          examples:
+            response:
+              value:
+                error: Method not allowed
+                error_description: The method used is not allowed for this resource
+                exception: Method not allowed
+    501Error:
+      description: |
+        Not Implemented<br/>
+        The requested resource is not available
+      content:
+        application/json:
+          schema:
+            description: 501 Error Response
+            properties:
+              error:
+                description: A human-friendly explanation of the error.
+                example: Not Implemented
+                type: string
+              error_description:
+                description: The error code generated by the application.
+                example: >
+                  Our Slack channel is off the hook!. No, really. It's sending
+                  out alerts like crazy right now.
+                type: string
+              exception:
+                description: May contain additional detail related to the error.
+                example: Not Implemented
+                type: string
+          examples:
+            response:
+              value:
+                error: Not Implemented
+                error_description: >
+                  Our Slack channel is off the hook!. No, really. It's sending
+                  out alerts like crazy right now.
+                exception: Not Implemented
+  requestBodies:
+    CreateCardToken:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateCardToken'
+    CreateAccountToken:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateAccountToken'
+  securitySchemes:
+    BasicAuth:
+      description: >
+        Use Basic authentication for the CreateBearerToken call. The credentials
+        are the client id and secret provided to you during integration.
+      type: http
+      scheme: basic
+    BearerToken:
+      type: apiKey
+      description: >
+        The value `Bearer access_token_value` where access_token_value is the
+        value of the access_token returned by the CreateBearerToken call
+      name: Authorization
+      in: header
+  schemas:
+    AuthResponse:
+      description: Authentication object
+      title: AuthResponse
+      properties:
+        access_token:
+          description: |
+            This is the value you need for all other calls to this API.
+          example: 8C5YuN0LDkGTlo1xwdh6z2ibPJpZ
+          type: string
+        application_name:
+          description: The GUID of the application
+          example: 43a444b1-a9a2-4474-beb0-71e66e4650cb
+          type: string
+        api_product_list:
+          description: A list of API products that the user has access to
+          example: '[Payments]'
+          type: string
+        api_product_list_json:
+          description: A valid JSON list of API products that the user has access to
+          example: '[ "Payments" ]'
+          type: string
+        client_id:
+          description: The unique identifier used to request the token
+          example: ABCDEFG
+          type: string
+        developer.email:
+          description: The email address on file for the user that requested the token
+          example: john.doe@example.com
+          type: string
+        expires_in:
+          description: 'How long the token will remain valid, in seconds after issued_at'
+          example: 599
+          type: number
+        issued_at:
+          description: 'The timestamp when the token was issued, as a UNIX epoch'
+          example: 1536260053678
+          type: number
+        organization_name:
+          description: The organization associated with the user who requested the token
+          example: i3verticals
+          type: string
+        refresh_count:
+          description: How many times this token has been refreshed
+          example: 0
+          type: number
+        refresh_token_expires_in:
+          description: >-
+            If this is a refresh response, how long the refreshed token will
+            remain valid, in seconds
+          example: 0
+          type: number
+        scope:
+          description: The scope granted by this token
+          example: all
+          type: string
+        status:
+          description: The status of the token
+          example: approved
+          type: string
+        token_type:
+          description: The type of token that was issued
+          example: BearerToken
+          type: string
+    AccountTokenDetail:
+      description: Detail about a stored account
+      title: AccountTokenDetail
+      type: object
+      properties:
+        account_type:
+          description: |
+            Identifies the type of account used as a source of funds.
+          type: string
+          enum:
+            - checking
+            - savings
+        account_number:
+          description: |
+            The unique account number associated with the payment type.
+          type: string
+          example: 98774568412
+        routing_number:
+          description: |
+            Identifies the FI holding funds
+          type: string
+        first_name:
+          description: |
+            The first name of the customer as it appears on the payment type.
+          example: John
+          type: string
+        last_name:
+          description: >
+            The family or surname of the customer as it appears on the payment
+            type.
+          example: Doe
+          type: string
+        company_name:
+          description: >
+            The name of the company, if this payment type is for a corporate
+            entity.
+          example: Joe's Bait Shop
+          type: string
+        address1:
+          description: >
+            The billing address associated with the payment type. Used for
+            address verification (AVS) if it is enabled for the merchant.
+          example: 500 Oak Street
+          type: string
+        address2:
+          description: >
+            The second address line associated with the payment type, if
+            present. Used for address verification (AVS) if it is enabled for
+            the merchant.
+          example: Unit 303
+          type: string
+        city:
+          description: The city associated with the account.
+          example: Saint Cloud
+          type: string
+        state:
+          description: |
+            The 2-digit abbreviation of the state associated with the account.
+          example: MN
+          type: string
+        postal_code:
+          description: >
+            The postal code associated with the account, without spaces or
+            hyphens (if 5+4 format)
+          example: 56304
+          maxLength: 9
+          minLength: 5
+          type: string
+        country:
+          description: Customer's country of residence.
+          example: United States
+          type: string
+        reason:
+          description: The reason used when submitting the payment to the processor.
+          example: Recurring
+          type: string
+          enum:
+            - OnFile
+            - Recurring
+            - Installment
+        token_expiration_date:
+          description: >
+            An optional date in the format MM/DD/YYYY indicating when the token
+            should expire.
+          example: 1/1/2019
+          type: string
+        customer_id:
+          description: >
+            A unique identifier for the customer, created by the merchant. This
+            is only used as a reference, and not enforced.
+          example: dca481aa-397a-4647-abf9-31fb6a44c109
+          type: string
+    CardTokenDetail:
+      description: Detail about a payment card
+      title: CardTokenDetail
+      type: object
+      properties:
+        card_number:
+          description: >
+            The credit card number. Required for charges using a card that is
+            not stored.
+          example: 4111111111111111
+          maxLength: 19
+          minLength: 13
+          type: string
+        first_name:
+          description: |
+            The first name of the customer as it appears on the payment type.
+          example: John
+          type: string
+        last_name:
+          description: >
+            The family or surname of the customer as it appears on the payment
+            type.
+          example: Doe
+          type: string
+        company_name:
+          description: >
+            The name of the company, if this payment type is for a corporate
+            entity.
+          example: Joe's Bait Shop
+          type: string
+        cvv:
+          description: >
+            The 3 or 4 digit Card Verification Value. This parameter may be
+            required depending on the merchant's setup.
+          example: 123
+          maxLength: 4
+          minLength: 3
+          type: string
+        expiration_date:
+          description: >
+            The expiration date of the card, in MMYY format. Required for
+            charges using a card that is not stored.
+          example: 1222
+          maxLength: 4
+          minLength: 4
+          type: string
+        address1:
+          description: >
+            The billing address associated with the payment type. Used for
+            address verification (AVS) if it is enabled for the merchant.
+          example: 500 Oak Street
+          type: string
+        address2:
+          description: >
+            The second address line associated with the payment type, if
+            present. Used for address verification (AVS) if it is enabled for
+            the merchant.
+          example: Unit 303
+          type: string
+        city:
+          description: The city associated with the account.
+          example: Saint Cloud
+          type: string
+        state:
+          description: |
+            The 2-digit abbreviation of the state associated with the account.
+          example: MN
+          type: string
+        postal_code:
+          description: >
+            The postal code associated with the account, without spaces or
+            hyphens (if 5+4 format)
+          example: 56304
+          maxLength: 9
+          minLength: 5
+          type: string
+        country:
+          description: Customer's country of residence.
+          example: United States
+          type: string
+        token_expiration_date:
+          description: >
+            An optional date in the format MM/DD/YYYY indicating when the token
+            should expire.
+          example: 1/1/2019
+          type: string
+    CreateCardTokenResponse:
+      description: Successful response to creating a card token.
+      title: CreateCardTokenResponse
+      properties:
+        card_token:
+          description: |
+            A token representing a stored credit card.
+          example: 5bbbc8de60dd501cd4294111LmqCZagGXTAT1pE8QAuxa
+          type: string
+    ChargeResponse:
+      description: Detail of a charge in a response body.
+      title: ChargeResponse
+      properties:
+        authorization_code:
+          description: >
+            A unique identifier for the authorization of the request, generated
+            by the payment system when the request is processed.
+          example: APOK8162
+          type: string
+        charge_id:
+          description: >
+            A unique identifier for the transaction, generated by the payment
+            server when the transaction is created.
+          example: 97678
+          title: Charge Id
+          type: integer
+          format: int32
+        processor_messages:
+          description: >
+            Additional messages from a processor related to processing a charge
+            or refund.
+          type: object
+          properties:
+            avs_response:
+              description: Response from the Address Verification System
+              example: 'Y'
+              type: string
+            avs_response_text:
+              description: The type of match that was performed
+              example: Address Match + 5 Zip
+              type: string
+            cv_response:
+              description: Response from validation of Security Code Value.
+              type: string
+            cv_result_text:
+              description: Additional detail related to the Security Code Value validation.
+              type: string
+            message:
+              description: General message from the result of processing the payment.
+              example: APPROVED
+              type: string
+            message1:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+            message2:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+        result_code:
+          description: A numeric code indicating the status of the request.
+          example: 0
+          type: string
+        result_text:
+          description: A short message containing information about the request.
+          example: APPROVED
+          type: string
+    RefundResponse:
+      description: Response of a successful refund.
+      title: RefundResponse
+      properties:
+        authorization_code:
+          description: >
+            A unique identifier for the authorization of the request, generated
+            by the payment system when the request is processed.
+          example: APOK8162
+          type: string
+        processor_messages:
+          description: >
+            Additional messages from a processor related to processing a charge
+            or refund.
+          type: object
+          properties:
+            avs_response:
+              description: Response from the Address Verification System
+              example: 'Y'
+              type: string
+            avs_response_text:
+              description: The type of match that was performed
+              example: Address Match + 5 Zip
+              type: string
+            cv_response:
+              description: Response from validation of Security Code Value.
+              type: string
+            cv_result_text:
+              description: Additional detail related to the Security Code Value validation.
+              type: string
+            message:
+              description: General message from the result of processing the payment.
+              example: APPROVED
+              type: string
+            message1:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+            message2:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+        refund_id:
+          description: >
+            A unique identifier for this refund, generated by the payment server
+            when the refund is created.
+          example: 97679
+          title: Refund Id
+          type: integer
+          format: int32
+        result_code:
+          description: A numeric code indicating the status of the request.
+          example: 0
+          type: string
+        result_text:
+          description: A short message containing information about the request.
+          example: APPROVED
+          type: string
+    ChargeInfo:
+      description: Detail of a charge.
+      title: ChargeInfo
+      properties:
+        account_type:
+          description: The payment method type.
+          example: VISA
+          type: string
+        adjusted_by_amount:
+          description: 'Any adjustment applied to the charge, if applicable.'
+          example: 0
+          type: number
+          format: double
+        approval_code:
+          description: The approval code from the processor.
+          example: OK4348
+          type: string
+        authorization_amount:
+          description: How much the payment method was authorized for.
+          example: 5
+          type: number
+        authorization_timestamp:
+          description: The timestamp when the authorization occurred.
+          example: '2018-09-28T19:25:03.693Z'
+          type: string
+          format: date-time
+        card_info_key:
+          example: 93939
+          type: string
+        cashback_amount:
+          description: Any cashback associated with the payment.
+          example: 0
+          type: number
+          format: double
+        charge_id:
+          description: >
+            A unique identifier for the transaction, generated by the payment
+            server when the transaction is created.
+          example: 97678
+          title: Charge Id
+          type: integer
+          format: int32
+        charge_timestamp:
+          description: When the charge was processed.
+          example: '2018-09-28T19:25:03.693Z'
+          type: string
+          format: date-time
+        charge_type:
+          description: How the charge should be processed.
+          enum:
+            - Authorization
+            - Sale
+          example: Sale
+          type: string
+        ip_address:
+          description: The IP address of the system that made this request.
+          example: 172.19.0.8
+          type: string
+        level3_amount:
+          example: 0
+          type: number
+          format: double
+        payment_type:
+          example: VISA
+          type: string
+        processor:
+          description: The name of the processor that processed this request.
+          example: FDRC
+          type: string
+        processor_messages:
+          description: >
+            Additional messages from a processor related to processing a charge
+            or refund.
+          type: object
+          properties:
+            avs_response:
+              description: Response from the Address Verification System
+              example: 'Y'
+              type: string
+            avs_response_text:
+              description: The type of match that was performed
+              example: Address Match + 5 Zip
+              type: string
+            cv_response:
+              description: Response from validation of Security Code Value.
+              type: string
+            cv_result_text:
+              description: Additional detail related to the Security Code Value validation.
+              type: string
+            message:
+              description: General message from the result of processing the payment.
+              example: APPROVED
+              type: string
+            message1:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+            message2:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+        result_code:
+          description: A numeric code indicating the status of the request.
+          example: 0
+          type: string
+        result_text:
+          description: A short message containing information about the request.
+          example: APPROVED
+          type: string
+        reversal_flag:
+          description: A flag indicating whether the payment was reversed.
+          example: 0
+          type: string
+        settle_flag:
+          description: A flag indicating whether the payment was settled.
+          example: 1
+          type: string
+        settlement_key:
+          description: |
+            An identifier for the settlement, created by the payment gateway.
+          example: 93917
+          type: integer
+        surcharge_amount:
+          description: Any surcharges added to the payment amount.
+          example: 0
+          type: number
+          format: double
+        tip_amount:
+          description: Any tip added to the payment amount.
+          example: 0
+          type: number
+          format: double
+        total_amount:
+          description: The total amount charged.
+          type: number
+          example: 5
+        transaction_finish_timestamp:
+          description: When the transaction was processed.
+          example: |
+            2018-09-28T19:25:06.7870000
+          type: string
+          format: date-time
+        void_flag:
+          description: A flag indicating whether the payment was voided.
+          example: 1
+          type: string
+    RefundInfo:
+      description: Detail of a refund.
+      title: RefundInfo
+      properties:
+        account_type:
+          description: The payment method type.
+          example: VISA
+          type: string
+        adjusted_by_amount:
+          description: 'Any adjustment applied to the charge, if applicable.'
+          example: 0
+          type: number
+          format: double
+        approval_code:
+          description: The approval code from the processor.
+          example: OK4348
+          type: string
+        authorization_amount:
+          description: How much the payment method was authorized for.
+          example: 5
+          type: number
+        authorization_timestamp:
+          description: The timestamp when the authorization occurred.
+          example: '2018-09-28T19:25:03.693Z'
+          type: string
+          format: date-time
+        card_info_key:
+          example: 93939
+          type: string
+        cashback_amount:
+          description: Any cashback associated with the payment.
+          example: 0
+          type: number
+          format: double
+        refund_id:
+          description: >
+            A unique identifier for the transaction, generated by the payment
+            server when the transaction is created.
+          example: 97678
+          title: Charge Id
+          type: integer
+          format: int32
+        charge_timestamp:
+          description: When the charge was processed.
+          example: '2018-09-28T19:25:03.693Z'
+          type: string
+          format: date-time
+        refund_type:
+          description: The method used for applying the payment.
+          example: Credit
+          type: string
+        ip_address:
+          description: The IP address of the system that made this request.
+          example: 172.19.0.8
+          type: string
+        level3_amount:
+          example: 0
+          type: number
+          format: double
+        payment_type:
+          example: VISA
+          type: string
+        processor:
+          description: The name of the processor that processed this request.
+          example: FDRC
+          type: string
+        processor_messages:
+          description: >
+            Additional messages from a processor related to processing a charge
+            or refund.
+          type: object
+          properties:
+            avs_response:
+              description: Response from the Address Verification System
+              example: 'Y'
+              type: string
+            avs_response_text:
+              description: The type of match that was performed
+              example: Address Match + 5 Zip
+              type: string
+            cv_response:
+              description: Response from validation of Security Code Value.
+              type: string
+            cv_result_text:
+              description: Additional detail related to the Security Code Value validation.
+              type: string
+            message:
+              description: General message from the result of processing the payment.
+              example: APPROVED
+              type: string
+            message1:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+            message2:
+              description: >-
+                Additional message from processing payment. May not be
+                populated.
+              type: string
+        result_code:
+          description: A numeric code indicating the status of the request.
+          example: 0
+          type: string
+        result_text:
+          description: A short message containing information about the request.
+          example: APPROVED
+          type: string
+        reversal_flag:
+          description: A flag indicating whether the payment was reversed.
+          example: 0
+          type: string
+        settle_flag:
+          description: A flag indicating whether the payment was settled.
+          example: 1
+          type: string
+        settlement_key:
+          description: |
+            An identifier for the settlement, created by the payment gateway.
+          example: 93917
+          type: integer
+        surcharge_amount:
+          description: Any surcharges added to the payment amount.
+          example: 0
+          type: number
+          format: double
+        tip_amount:
+          description: Any tip added to the payment amount.
+          example: 0
+          type: number
+          format: double
+        total_amount:
+          description: The total amount charged.
+          type: number
+          example: 5
+        transaction_finish_timestamp:
+          description: When the transaction was processed.
+          example: |
+            2018-09-28T19:25:06.7870000
+          type: string
+          format: date-time
+        void_flag:
+          description: A flag indicating whether the payment was voided.
+          example: 1
+          type: string
+    CreateCardToken:
+      description: Request for a token representing a stored card.
+      title: CreateCardToken
+      type: object
+      properties:
+        card_number:
+          description: >
+            The credit card number. Required for charges using a card that is
+            not stored.
+          example: 4111111111111111
+          maxLength: 19
+          minLength: 13
+          type: string
+        cvv:
+          description: >
+            The 3 or 4 digit Card Verification Value. This parameter may be
+            required depending on the merchant's setup.
+          example: 123
+          maxLength: 4
+          minLength: 3
+          type: string
+        expiration_date:
+          description: |
+            The date that the card expires, in MM/YY format.
+          example: 1222
+          maxLength: 4
+          minLength: 4
+          type: string
+        first_name:
+          description: |
+            The first name of the customer as it appears on the payment type.
+          example: John
+          type: string
+        last_name:
+          description: >
+            The family or surname of the customer as it appears on the payment
+            type.
+          example: Doe
+          type: string
+        company_name:
+          description: >
+            The name of the company, if this payment type is for a corporate
+            entity.
+          example: Joe's Bait Shop
+          type: string
+        address1:
+          description: >
+            The billing address associated with the payment type. Used for
+            address verification (AVS) if it is enabled for the merchant.
+          example: 500 Oak Street
+          type: string
+        address2:
+          description: >
+            The second address line associated with the payment type, if
+            present. Used for address verification (AVS) if it is enabled for
+            the merchant.
+          example: Unit 303
+          type: string
+        city:
+          description: The city associated with the account.
+          example: Saint Cloud
+          type: string
+        state:
+          description: |
+            The 2-digit abbreviation of the state associated with the account.
+          example: MN
+          type: string
+        postal_code:
+          description: >
+            The postal code associated with the account, without spaces or
+            hyphens (if 5+4 format)
+          example: 56304
+          maxLength: 9
+          minLength: 5
+          type: string
+        country:
+          description: Customer's country of residence.
+          example: United States
+          type: string
+        reason:
+          description: The reason used when submitting the payment to the processor.
+          example: Recurring
+          type: string
+          enum:
+            - OnFile
+            - Recurring
+            - Installment
+        token_expiration_date:
+          description: >
+            An optional date in the format MM/DD/YYYY indicating when the token
+            should expire.
+          example: 1/1/2019
+          type: string
+      required:
+        - card_number
+        - expiration_date
+        - first_name
+        - last_name
+        - address1
+        - city
+        - state
+        - postal_code
+        - country
+        - reason
+    CreateAccountToken:
+      description: Request for a token representing a stored account.
+      title: CreateAccountToken
+      type: object
+      properties:
+        account_type:
+          description: |
+            Identifies the type of account used as a source of funds.
+          type: string
+          enum:
+            - checking
+            - savings
+        account_number:
+          description: |
+            The unique account number associated with the payment type.
+          type: string
+          example: 98774568412
+        routing_number:
+          description: |
+            Identifies the FI holding funds
+          type: string
+        first_name:
+          description: |
+            The first name of the customer as it appears on the payment type.
+          example: John
+          type: string
+        last_name:
+          description: >
+            The family or surname of the customer as it appears on the payment
+            type.
+          example: Doe
+          type: string
+        company_name:
+          description: >
+            The name of the company, if this payment type is for a corporate
+            entity.
+          example: Joe's Bait Shop
+          type: string
+        address1:
+          description: >
+            The billing address associated with the payment type. Used for
+            address verification (AVS) if it is enabled for the merchant.
+          example: 500 Oak Street
+          type: string
+        address2:
+          description: >
+            The second address line associated with the payment type, if
+            present. Used for address verification (AVS) if it is enabled for
+            the merchant.
+          example: Unit 303
+          type: string
+        city:
+          description: The city associated with the account.
+          example: Saint Cloud
+          type: string
+        state:
+          description: |
+            The 2-digit abbreviation of the state associated with the account.
+          example: MN
+          type: string
+        postal_code:
+          description: >
+            The postal code associated with the account, without spaces or
+            hyphens (if 5+4 format)
+          example: 56304
+          maxLength: 9
+          minLength: 5
+          type: string
+        country:
+          description: Customer's country of residence.
+          example: United States
+          type: string
+        reason:
+          description: The reason used when submitting the payment to the processor.
+          example: Recurring
+          type: string
+          enum:
+            - OnFile
+            - Recurring
+            - Installment
+        token_expiration_date:
+          description: >
+            An optional date in the format MM/DD/YYYY indicating when the token
+            should expire.
+          example: 1/1/2019
+          type: string
+        customer_id:
+          description: >
+            A unique identifier for the customer, created by the merchant. This
+            is only used as a reference, and not enforced.
+          example: dca481aa-397a-4647-abf9-31fb6a44c109
+          type: string
+      required:
+        - account_type
+        - account_number
+        - routing_number
+        - first_name
+        - last_name
+        - address1
+        - city
+        - state
+        - postal_code
+        - country
+        - reason
